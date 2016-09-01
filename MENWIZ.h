@@ -53,21 +53,24 @@ extern const char MW_ver[];
 
 // SIZES (DIMENSIONAL LIMITS OF STATICALLY ALLOCATED STRUCTURES)
 // ---------------------------------------------------------------------------
-#define MAX_MENU       	15   //maximum number of nodes (absolute supported max number of addMenu calls)
-#define MAX_OPTXMENU   	5    //maximum number of options/submenus for each node (max number of addItem call for each menu item) 
+#define MAX_MENU       	25   //maximum number of nodes (absolute supported max number of addMenu calls)
+#define MAX_OPTXMENU   	20    //maximum number of options/submenus for each node (max number of addItem call for each menu item)
 
 // OTHER SIZES 
 // ---------------------------------------------------------------------------
-#define MW_FLOAT_DEC    1    //decimal digits in float screen representation
+#define MW_FLOAT_DEC    2    //decimal digits in float screen representation
 
 // VALUE TYPES
 // ---------------------------------------------------------------------------
 #define MW_LIST         11  //OPTION LIST
 #define MW_BOOLEAN     	12  //ON/OFF TOGGLE
+#define MW_BOOLEAN_ACTION 99  //ON/OFF TOGGLE WITH ACTION FIRED IMMEDIATELY UPON VARIABLE CONFIRM
 #define MW_AUTO_INT    	13  //INTEGER VALUE WITH INCREMENT STEP
 #define MW_AUTO_FLOAT  	14  //FLOATING POINT VALUE WITH INCREMENT STEP
 #define MW_AUTO_BYTE   	15  //byte VALUE WITH INCREMENT STEP
 #define MW_ACTION      	16  //FIRE AN ACTION WHEN CONFIRM BUTTON IS PUSHED
+#define MW_LABELED_ACTION 97 //FIRE AN ACTION WHEN CONFIRM BUTTON IS PUSHED, WITH A CUSTOM CONFIRM MESSAGE
+#define MW_DISPLAY_TEXT	98	//DISPLAY READ-ONLY TEXT FROM char* FUNCTION CALL
 #define MW_EDIT_INT    	17  //not implemented yet
 #define MW_EDIT_FLOAT  	18  //not implemented yet
 #define MW_EDIT_TEXT   	19  //not implemented yet
@@ -159,10 +162,12 @@ typedef struct{
   void*    lower;
   void*    upper;
   void*    incr;   
+  char*    (*func)();
 }_var;
 
 typedef struct{
   MW_TYPE  type;
+  MW_LABEL label;
   void     (*action)();
 }_act;
 
@@ -182,8 +187,11 @@ public:
   void     addVar(MW_TYPE, float*, float, float, float);
   void     addVar(MW_TYPE, byte*,byte ,byte ,byte);
   void     addVar(MW_TYPE, boolean*);
+  void     addVar(MW_TYPE, boolean*, void (*f)());
   void     addVar(MW_TYPE, void (*f)());
+  void     addVar(MW_TYPE, void (*f)(), MW_LABEL);
   void     addVar(MW_TYPE t,char *s);
+  void     addVar(MW_TYPE t, char* (*f)());
   void     setBehaviour(MW_FLAGS,boolean);
   _option* addItem(int, MW_LABEL);
 
@@ -191,6 +199,7 @@ public:
   MW_FLAGS flags;
   MW_LABEL label;
   void     *var;
+  void     *varact;
   byte     cod;
   byte     parent;
   byte     cur_item;
@@ -216,6 +225,7 @@ public:
   int      getErrorMessage(boolean); 	//if arg=true, err message is printed to the default Serial terminal, otherwise the function returns error code only
   int      getLastbutton(){return last_button;} 
   int      freeRam();
+  void     cleanup();
 
 #ifdef EEPROM_SUPPORT
   void     writeEeprom();
