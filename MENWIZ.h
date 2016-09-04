@@ -31,7 +31,8 @@
 
 #include <Wire.h>
 #include <avr/pgmspace.h>
-#include <LCD.h>
+
+#include "DigoleSerial.h"
 
 #ifdef BUTTON_SUPPORT 
   #include <buttons.h>
@@ -132,7 +133,7 @@ extern const char MW_ver[];
 //#define MW_EOL_CHAR    0x0A
 #define MW_EOL_CHAR    '\n'
 #define MW_TYPE        uint8_t
-#define MW_LCD         LCD   // this could help to change the library: your lcd data type
+#define MW_LCD         DigoleSerialDisp   // this could help to change the library: your lcd data type
 #define MW_LABEL       const __FlashStringHelper*  
 #define MW_FLAGS       uint8_t
 #define MW_4BTN        0MW_MENU_INDEX

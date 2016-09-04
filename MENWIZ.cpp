@@ -22,6 +22,26 @@
 //
 // @author R. Brunialti - roberto_brunialti@tiscali.it
 // ---------------------------------------------------------------------------
+
+/*
+ TODOs:
+ - right-align ->x/y menu position indicator - currently not all the way to the right of the screen width
+ - be sure to clear out entire line length when drawing node
+ - implement custom font chars for menu indicators (figure out if/when the hash sign and down arrow ever actually occur?)
+ - ideally, implement an adapter class, so that MENWIZ code itself doesn't need to be hacked up
+ -- adapter file name and class name would be 'LCD', to act as a direct drop-in substitute for the 'LCD' char library and class name
+ -- create a 'write' method in adapter which redirects to Digole print routine
+ -- create a 'begin(c, r)' method in adapter, which sets row/col sizes, and does Digol-specific init stuff (currently added into  menwiz::begin method)
+ --- create blink and noblink methods or stubs to ignore, or take appropriate action on blink actions (still not sure what/if these do in menu)
+ --- create setCursor(r, c) method that redirects to Digole setPrintPos
+ --- catch special characters 0, 2, 126 and 165, and re-map to user-defined characters/symbols
+
+ NOTES:
+ - menu text font must be fixed-width/monospace
+ - need to experiment w/ menu indicator symbol fonts, and see if/how they affect spacing in menu text
+ - allow specifying user font for menu text
+ - allow specifying user font and character for each symbol
+ */
 #include "MENWIZ.h"
 
 #define SCREATE(p,s)     p=(char *)malloc(strlen((char *)s)+1); strcpy((char *)p,(char *)s)
@@ -29,7 +49,7 @@
 #define TSFORM(b,s,l,c)  memset(b,32,l);strncpy_P(b,(const char PROGMEM*)s, min(col,strlen_P((char PROGMEM*) s))); b[strlen(b)]=' ';itoa(cur_menu->cur_item+1,tmp,10);strcat(tmp,"/");itoa(cur_menu->idx_o,tmp+strlen(tmp),10);b[col-strlen(tmp)-1]=c;memcpy(b+(col-strlen(tmp)),tmp,strlen(tmp));b[l]=NULL;lcd->print(b)
 #define FSFORM(b,s,l)    memset(b,32,l);memcpy_P(b,(const char PROGMEM*)s,min(l,strlen_P((const char PROGMEM*)s)));buf[l]=NULL;lcd->print(b);
 #define ERROR(a)         MW_error=a
-#define BLANKLINE(b,r,c) memset(b,32,c);b[c]=NULL; lcd->setCursor(0,r);lcd->print(b)
+#define BLANKLINE(b,r,c) memset(b,32,c);b[c]=NULL; lcd->setPrintPos(0,r);lcd->print(b)
 
 // GLOBAL VARIABLES
 // ---------------------------------------------------------------------------
@@ -43,9 +63,18 @@ static char *buf;
 char tmp[6];
 
 const char MW_STR_CONFIRM[]={"[Confirm] to run."};
-const uint8_t c0[8]={B00000, B00000, B00001, B00010, B10100, B01000, B00000, B00000}; 
-const uint8_t c1[8]={B00000, B11100, B00100, B00100, B10101, B01110, B00100, B00000}; 
-const uint8_t c2[8]={B00000, B01010, B11111, B01110, B11111, B01010, B00000, B00000}; 
+//const uint8_t c0[8]={B00000, B00000, B00001, B00010, B10100, B01000, B00000, B00000}; //checkmark
+//const uint8_t c1[8]={B00000, B11100, B00100, B00100, B10101, B01110, B00100, B00000}; //down/return arrow
+//const uint8_t c2[8]={B00000, B01010, B11111, B01110, B11111, B01010, B00000, B00000}; //# or * sign
+//other characters:
+/*
+ 165 (-)    - square for collapsed parent nodes (dash right now)
+ 126 (\xbb) - right arrow for current node (tilde right now)
+   2        - custom char 2 (hash sign - no idea what this is for)
+   1        - custom char 1 (down arrow - no idea what this is for)
+   0        - custom char 0 (checkmark)
+
+ */
 //const uint8_t c3[8]={B00100, B01110, B11111, B00000, B00000, B00000, B11111, B00000}; 
 
 
@@ -349,13 +378,21 @@ void menwiz::begin(void *l,int c, int r){
   row=r;
   col=c;
   lcd=(MW_LCD*)l; 
-  lcd->begin(c,r);  //  LCD size
+  //lcd->begin(c,r);  //  LCD size
+  lcd->begin();
+//  lcd->displayStartScreen(false);
+  delay(4000);
+  lcd->clearScreen();
+  lcd->setFont(200);
 //  lcd->setBacklight(HIGH);
 //  lcd->noCursor();
-  lcd->noBlink();
+  //TODO: determine if blink/noBlink has any needed function in menu system
+//  lcd->noBlink();
+/* TODO: need to come up with equivalent for GLCD
   lcd->createChar(0,(uint8_t*)c0);
   lcd->createChar(1,(uint8_t*)c1);
   lcd->createChar(2,(uint8_t*)c2);
+*/
   sbuf=(char*)malloc(r*c+r+1); if(sbuf==NULL) ERROR(900);
   memset(sbuf,' ',r*c+r);sbuf[r*c+r]=0;
   buf =(char*)malloc(c+1);   if(buf==NULL) ERROR(900);  
@@ -366,7 +403,8 @@ void menwiz::drawUsrScreen(char *scr){
 
   ERROR(0);
   int start=0, cur=0;
-  lcd->noBlink();
+  //TODO: determine if blink/noBlink has any needed function in menu system
+//  lcd->noBlink();
   for(int i=0;i<row;i++){
     while((scr[cur]!=MW_EOL_CHAR)&&(scr[cur]!=0)){
 	  cur++;
@@ -374,7 +412,7 @@ void menwiz::drawUsrScreen(char *scr){
 	memset(buf,32,col); 
 	memcpy(buf,&scr[start],cur-start); 
 	buf[col]=NULL; 
-    lcd->setCursor(0,i);
+    lcd->setPrintPos(0,i);
 	lcd->print(buf);
 	if (scr[cur]==0){
 	  return;
@@ -445,17 +483,18 @@ void menwiz::drawMenu(_menu *mc){
   byte top,fl=0;
   
 //  ERROR(0);  
-  lcd->setCursor(0,0);
+  lcd->setPrintPos(0,0);
   // DRAW THE FIRST LINE 
   
   if((mc->type==MW_ROOT)||(mc->type==MW_SUBMENU)||(((_act*)mc->var)->type==MW_LIST)){
     if(bitRead(flags,MW_MENU_INDEX)){
       if(((_act*)mc->var)->type==MW_LIST){
-      	top=126;}
+      	top = '\xbb';}
       else if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false){
-        top=2;}
+        //top=2;}
+    	  top='#';}
       else
-        top=126;
+    	  top = '\xbb';
       TSFORM(buf,mc->label,(int) col,top);
       }
     else{
@@ -475,22 +514,24 @@ void menwiz::drawMenu(_menu *mc){
     //DRAW ALL REMAINNING LINES
     for (i=1,j=rstart;i<row;i++,j++){
       if(j<rstop){
-        lcd->setCursor(0,i); 
+        lcd->setPrintPos(0,i);
 	if(bitRead(mc->flags,MW_MENU_COLLAPSED)){
 	  op=(_option*)mc->o[j];
 	  mn=&m[op->sbm];
           if(j==mc->cur_item){
             if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false)
-            	buf[0]=2;
+//            	buf[0]=2;
+            	buf[0]='#';
             else 
-	    	buf[0]=126;
+	    	buf[0]='\xbb';
 	    fl=true;
 	    }
 	  else{
             if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false)
-            	buf[0]=2;
+//            	buf[0]=2;
+            	buf[0]='#';
             else 
-	    	buf[0]=165;
+	    	buf[0]='\xb7';
 	    fl=false;
 	    }
 	  strncpy_P(&buf[1],(const char PROGMEM*)mn->label,min(col,strlen_P((const char PROGMEM*)mn->label)));
@@ -537,18 +578,21 @@ void menwiz::drawMenu(_menu *mc){
           else{ // NOT VARS (ROOT OR SUBMENU)
 	    op=(_option*)mc->o[j];
 //	    lcd->setCursor(0,i);
-
-	    lcd->write((j==mc->cur_item)?126:(bitRead(m[op->sbm].flags,cur_user)?165:2));
+//	    lcd->write((j==mc->cur_item)?'\xbb':(bitRead(m[op->sbm].flags,cur_user)?'-':2));
+	    lcd->print((j==mc->cur_item)?'\xbb':(bitRead(m[op->sbm].flags,cur_user)?'\xb7':'#'));
 	    FSFORM(buf,m[op->sbm].label,(int) col-1);
 	    }
 	  }
 	else{// NOT MENU COLLAPSED
 	  op=(_option*)mc->o[j];
 //	  lcd->setCursor(0,i);
-          if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false)
-	    lcd->write((j==mc->cur_item)?2:165);
-          else 
-            lcd->write((j==mc->cur_item)?126:165);
+          if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false) {
+	    //lcd->write((j==mc->cur_item)?2:'-');
+        lcd->print((j==mc->cur_item)?'#':'\xb7');
+          } else {
+            //lcd->write((j==mc->cur_item)?'\xbb':'-');
+        	lcd->print((j==mc->cur_item)?'\xbb':'\xb7');
+          }
 	  FSFORM(buf,m[op->sbm].label,(int) col-1);
           }
         }
@@ -569,7 +613,7 @@ void menwiz::drawVar(_menu *mc){
   switch (((_var*)mc->var)->type){
     case MW_LIST:
       if(bitRead(mc->flags,MW_SCROLL_HORIZONTAL)){
-         lcd->setCursor(0,1);
+         lcd->setPrintPos(0,1);
          op=(_option*)mc->o[mc->cur_item];
          strncpy_P(buf,(const char PROGMEM*)pgm_read_word(op->label),min(col,strlen_P((const char PROGMEM*)op->label)));
          strcpy(sbuf,"[");strcat(sbuf,buf);strcat(sbuf,"]");//@
@@ -591,8 +635,9 @@ void menwiz::drawVar(_menu *mc){
           for (i=1,j=rstart;i<row;i++,j++){
             if(j<rstop){
               op=(_option*)mc->o[j];
-              lcd->setCursor(0,i);
-              lcd->write((j==mc->cur_item)?0:165);
+              lcd->setPrintPos(0,i);
+              //lcd->write((j==mc->cur_item)?0:'-');
+              lcd->print((j==mc->cur_item)?'\x95':'\xb0');
               FSFORM(buf,op->label,col-1);
               }
             else{
@@ -607,7 +652,7 @@ void menwiz::drawVar(_menu *mc){
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
         }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       if(((_var*)mc->var)->type==MW_AUTO_INT){
 		strcpy(sbuf,itoa(VINT(((_var*)mc->var)->lower),buf,10));
 		strcat(sbuf," [");
@@ -628,7 +673,7 @@ void menwiz::drawVar(_menu *mc){
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
         }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       lcd->print(dtostrf(VFLOAT(((_var*)mc->var)->lower),0,MW_FLOAT_DEC,buf));
       lcd->print(F(" ["));
       lcd->print(dtostrf(VFLOAT(((_var*)mc->var)->val),0,MW_FLOAT_DEC,buf));
@@ -640,7 +685,7 @@ void menwiz::drawVar(_menu *mc){
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
         }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       SFORM(buf,VBOOL(((_var*)mc->var)->val)?"ON":"OFF",(int) col);
       break;      
     case MW_ACTION:
@@ -648,7 +693,7 @@ void menwiz::drawVar(_menu *mc){
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
         }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       if (t == MW_ACTION) {
     	  SFORM(buf,MW_STR_CONFIRM,(int) col);
       } else {
@@ -660,19 +705,20 @@ void menwiz::drawVar(_menu *mc){
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
         }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       sbuf[0]='[';
       strcpy(sbuf+1,(char*)((_var*)mc->var)->val);
       strcat(sbuf,"]");
       SFORM(buf,sbuf,col);
-	  lcd->blink();
-      lcd->setCursor(mc->cur_item+1,1);
+      //TODO: determine if blink/noBlink has any needed function in menu system
+//	  lcd->blink();
+      lcd->setPrintPos(mc->cur_item+1,1);
       break;
     case MW_DISPLAY_TEXT:
       for(i=2;i<row;i++){
         BLANKLINE(buf,i,col);
       }
-      lcd->setCursor(0,1);
+      lcd->setPrintPos(0,1);
       strcpy(sbuf, (char*)((_var*)mc->var)->func());
       SFORM(buf,sbuf,col);
     default:
@@ -686,9 +732,10 @@ void menwiz::drawList(_menu *mc, int nc){
 //   ERROR(0);
    for(int i=0;i<(row*nc-nc);i++){
       int pc=i/nr; int pr=i%nr+1;
-      lcd->setCursor(pc*cw,pr);
+      lcd->setPrintPos(pc*cw,pr);
       if(i<mc->idx_o){
-		lcd->write((i==mc->cur_item)?0:165);
+		//lcd->write((i==mc->cur_item)?0:'-');
+    	  lcd->print((i==mc->cur_item)?'\x95':'\xb0');
 		FSFORM(buf,((_option*)mc->o[i])->label,(int)cw-1);
 		}
       else{
@@ -933,7 +980,8 @@ void menwiz::actBTE(){
     else if(((_var*)cm->var)->type==MW_BOOLEAN || ((_var*)cm->var)->type==MW_BOOLEAN_ACTION){
       VBOOL(((_var*)cm->var)->val)=VBOOL(((_var*)cm->var)->old);}
     else if((((_var*)cm->var)->type==MW_EDIT_TEXT)){
-      lcd->noBlink();
+    //TODO: determine if blink/noBlink has any needed function in menu system
+//      lcd->noBlink();
       }    
     }
   cur_menu=&m[cur_menu->parent];
