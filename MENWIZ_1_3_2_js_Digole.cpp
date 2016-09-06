@@ -51,7 +51,9 @@ void setup() {
 	_menu *r,*s1,*s2;
 
 	Serial.begin(19200);
-	menu.begin(&lcd, 21, 6); //declare lcd object and screen size to menwiz lib
+//	menu.begin(&lcd, 21, 6); //declare lcd object and screen size to menwiz lib
+	menu.begin(&lcd, 21, 6, 200, '\xb7', '\xbb', '\xb0', '\x95');
+
 	menu.addUsrNav(menuButtonMapper, 4);
 
 

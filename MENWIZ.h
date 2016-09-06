@@ -214,7 +214,7 @@ protected:
 class menwiz{
 public:
            menwiz();
-  void     begin(void *,int, int);
+  void     begin(void *l,int c, int r, uint8_t _fontNum, char _nodeSymbolCharNum, char _currentNodeSymbolCharNum, char _listItemSymbolCharNum, char _selectedListItemSymbolCharNum, char _noUserGrantSymbolCharNum = '#');
   void     addSplash(char *,int);
   void     addUsrScreen(void (*f)(), unsigned long);
   void     addUsrNav(int (*f)(), int);
@@ -261,6 +261,13 @@ private:
   unsigned long tm_start;       	//start time (set when begin method is invocated)
   unsigned long tm_splash;      	//splash screen duration  
   unsigned long tm_usrScreen;   	//lap time before usrscreen  
+  uint8_t	fontNum;
+  char	nodeSymbolCharNum;
+  char	currentNodeSymbolCharNum;
+  char	listItemSymbolCharNum;
+  char	selectedListItemSymbolCharNum;
+  char	noUserGrantSymbolCharNum;
+
   void     apply2vars(void (*f)(_menu *));
   int      actNavButtons(int);
   void     drawMenu(_menu *);
