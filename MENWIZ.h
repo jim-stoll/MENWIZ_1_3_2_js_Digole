@@ -213,8 +213,10 @@ protected:
 
 class menwiz{
 public:
-           menwiz();
-  void     begin(void *l,int c, int r, uint8_t _fontNum, char _nodeSymbolCharNum, char _currentNodeSymbolCharNum, char _listItemSymbolCharNum, char _selectedListItemSymbolCharNum, char _noUserGrantSymbolCharNum = '#');
+           menwiz(uint8_t fontNum, char nodeSymbolCharNum, char currentNodeSymbolCharNum, char itemSymbolCharNum, char selectedItemSymbolCharNum, char noUserGrantSymbolCharNum);
+           menwiz(uint8_t fontNum, unsigned int symbolBbxWidthPx, unsigned int symbolBbxHeightPx, const unsigned char nodeSymbolBitmap[], const unsigned char currentNodeSymbolBitmap[], const unsigned char itemSymbolBitmap[], const unsigned char selectedItemSymbolBitmap[], const unsigned char noUserGrantSymbolBitmap[]);
+
+  void     begin(void *l,int c, int r);//, uint8_t _fontNum, char _nodeSymbolCharNum, char _currentNodeSymbolCharNum, char _listItemSymbolCharNum, char _selectedListItemSymbolCharNum, char _noUserGrantSymbolCharNum = '#');
   void     addSplash(char *,int);
   void     addUsrScreen(void (*f)(), unsigned long);
   void     addUsrNav(int (*f)(), int);
@@ -261,12 +263,22 @@ private:
   unsigned long tm_start;       	//start time (set when begin method is invocated)
   unsigned long tm_splash;      	//splash screen duration  
   unsigned long tm_usrScreen;   	//lap time before usrscreen  
+
+  bool	isCharSymbol;
   uint8_t	fontNum;
   char	nodeSymbolCharNum;
   char	currentNodeSymbolCharNum;
-  char	listItemSymbolCharNum;
-  char	selectedListItemSymbolCharNum;
+  char	itemSymbolCharNum;
+  char	selectedItemSymbolCharNum;
   char	noUserGrantSymbolCharNum;
+  const unsigned char *nodeSymbolBitmap;
+  const unsigned char *currentNodeSymbolBitmap;
+  const unsigned char *itemSymbolBitmap;
+  const unsigned char *selectedItemSymbolBitmap;
+  const unsigned char *noUserGrantSymbolBitmap;
+
+  byte symbolBbxWidthPx;
+  byte symbolBbxHeightPx;
 
   void     apply2vars(void (*f)(_menu *));
   int      actNavButtons(int);
@@ -278,6 +290,8 @@ private:
   void     actBTL();
   void     actBTR();
   void     actBTC();
+  void     init();
+  void     TSFORM(char *b, const __FlashStringHelper *s, byte c);
 protected:
 };
 

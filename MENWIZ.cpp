@@ -25,31 +25,40 @@
 
 /*
  TODOs:
- - right-align ->x/y menu position indicator - currently not all the way to the right of the screen width
- - be sure to clear out entire line length when drawing node
- - implement custom font chars for menu indicators (figure out if/when the hash sign and down arrow ever actually occur?)
- - ideally, implement an adapter class, so that MENWIZ code itself doesn't need to be hacked up
- -- adapter file name and class name would be 'LCD', to act as a direct drop-in substitute for the 'LCD' char library and class name
- -- create a 'write' method in adapter which redirects to Digole print routine
- -- create a 'begin(c, r)' method in adapter, which sets row/col sizes, and does Digol-specific init stuff (currently added into  menwiz::begin method)
- --- create blink and noblink methods or stubs to ignore, or take appropriate action on blink actions (still not sure what/if these do in menu)
- --- create setCursor(r, c) method that redirects to Digole setPrintPos
- --- catch special characters 0, 2, 126 and 165, and re-map to user-defined characters/symbols
+ --- determine what, if anything, blink/noblink does in menu operations
 
  NOTES:
  - menu text font must be fixed-width/monospace
- - need to experiment w/ menu indicator symbol fonts, and see if/how they affect spacing in menu text
- - allow specifying user font for menu text
- - allow specifying user font and character for each symbol
  */
 #include "MENWIZ.h"
 
+
 #define SCREATE(p,s)     p=(char *)malloc(strlen((char *)s)+1); strcpy((char *)p,(char *)s)
 #define SFORM(b,s,l)     memset(b,32,l); memcpy(b,s,strlen(s)); b[l]=NULL; lcd->print(b)
-#define TSFORM(b,s,l,c)  memset(b,32,l);strncpy_P(b,(const char PROGMEM*)s, min(col,strlen_P((char PROGMEM*) s))); b[strlen(b)]=' ';itoa(cur_menu->cur_item+1,tmp,10);strcat(tmp,"/");itoa(cur_menu->idx_o,tmp+strlen(tmp),10);b[col-strlen(tmp)-1]=c;memcpy(b+(col-strlen(tmp)),tmp,strlen(tmp));b[l]=NULL;lcd->print(b)
+//#define TSFORM(b,s,l,c)  memset(b,32,l);strncpy_P(b,(const char PROGMEM*)s, min(col,strlen_P((char PROGMEM*) s))); b[strlen(b)]=' ';itoa(cur_menu->cur_item+1,tmp,10);strcat(tmp,"/");itoa(cur_menu->idx_o,tmp+strlen(tmp),10);b[col-strlen(tmp)-1]=c;memcpy(b+(col-strlen(tmp)),tmp,strlen(tmp));b[l]=NULL;lcd->print(b)
 #define FSFORM(b,s,l)    memset(b,32,l);memcpy_P(b,(const char PROGMEM*)s,min(l,strlen_P((const char PROGMEM*)s)));buf[l]=NULL;lcd->print(b);
 #define ERROR(a)         MW_error=a
 #define BLANKLINE(b,r,c) memset(b,32,c);b[c]=NULL; lcd->setPrintPos(0,r);lcd->print(b)
+
+void menwiz::TSFORM(char *b, const __FlashStringHelper *s, byte c) {
+	char tmp[6];
+	memset(b,32,col);
+	strncpy_P(b,(const char PROGMEM*)s, min(col-5,strlen_P((char PROGMEM*) s)));
+	itoa(cur_menu->cur_item+1,tmp,10);
+	strcat(tmp,"/");
+	itoa(cur_menu->idx_o,tmp+strlen(tmp),10);
+
+	if (isCharSymbol) {
+		b[col-strlen(tmp)-1]=c;
+	}
+	memcpy(b+(col-strlen(tmp)),tmp,strlen(tmp));
+	b[col]=NULL;
+	lcd->print(b);
+
+	if (!isCharSymbol) {
+		lcd->drawBitmap(col*symbolBbxWidthPx - 4*symbolBbxWidthPx, 0, symbolBbxWidthPx, symbolBbxHeightPx, currentNodeSymbolBitmap);
+	}
+}
 
 // GLOBAL VARIABLES
 // ---------------------------------------------------------------------------
@@ -60,7 +69,6 @@ boolean    MW_invar=false;
 //_menu    m[MAX_MENU];
 
 static char *buf;
-char tmp[6];
 
 const char MW_STR_CONFIRM[]={"[Confirm] to run."};
 //const uint8_t c0[8]={B00000, B00000, B00001, B00010, B10100, B01000, B00000, B00000}; //checkmark
@@ -68,18 +76,32 @@ const char MW_STR_CONFIRM[]={"[Confirm] to run."};
 //const uint8_t c2[8]={B00000, B01010, B11111, B01110, B11111, B01010, B00000, B00000}; //# or * sign
 //other characters:
 /*
- 165 (-)    - square for collapsed parent nodes (dash right now)
- 126 (\xbb) - right arrow for current node (tilde right now)
-   2        - custom char 2 (hash sign - when user has no access to menu item)
-   1        - custom char 1 (down arrow - doesn't seem to actually be used anywhere)
-   0        - custom char 0 (checkmark)
+ 165        - square for collapsed parent nodes
+ 126        - right arrow for current node
+   2        - custom char 2
+   1        - custom char 1
+   0        - custom char 0
 
  */
-//const uint8_t c3[8]={B00100, B01110, B11111, B00000, B00000, B00000, B11111, B00000}; 
 
+menwiz::menwiz
+	(uint8_t fontNum, char nodeSymbolCharNum, char currentNodeSymbolCharNum, char itemSymbolCharNum, char selectedItemSymbolCharNum, char noUserGrantSymbolCharNum)
+	:fontNum(fontNum), nodeSymbolCharNum(nodeSymbolCharNum), currentNodeSymbolCharNum(currentNodeSymbolCharNum), itemSymbolCharNum(itemSymbolCharNum), selectedItemSymbolCharNum(selectedItemSymbolCharNum), noUserGrantSymbolCharNum(noUserGrantSymbolCharNum) {
 
-menwiz::menwiz(){
+	init();
+	isCharSymbol = true;
+}
 
+menwiz::menwiz
+	(uint8_t fontNum, unsigned int symbolBbxWidthPx, unsigned int symbolBbxHeightPx, const unsigned char nodeSymbolBitmap[], const unsigned char currentNodeSymbolBitmap[], const unsigned char itemSymbolBitmap[], const unsigned char selectedItemSymbolBitmap[], const unsigned char noUserGrantSymbolBitmap[])
+	:fontNum(fontNum), symbolBbxWidthPx(symbolBbxWidthPx), symbolBbxHeightPx(symbolBbxHeightPx), nodeSymbolBitmap(nodeSymbolBitmap), currentNodeSymbolBitmap(currentNodeSymbolBitmap), itemSymbolBitmap(itemSymbolBitmap), selectedItemSymbolBitmap(selectedItemSymbolBitmap), noUserGrantSymbolBitmap(noUserGrantSymbolBitmap) {
+
+	init();
+	isCharSymbol = false;
+
+}
+
+void menwiz::init() {
   ERROR(0);
   bitWrite(flags,FL_SPLASH,false);
   bitWrite(flags,FL_SPLASH_DRAW,false);
@@ -371,35 +393,24 @@ void menwiz::addUsrNav(int (*f)(), int nb){
      ERROR(130);
   }
 
-void menwiz::begin(void *l,int c, int r, uint8_t _fontNum, char _nodeSymbolCharNum, char _currentNodeSymbolCharNum, char _listItemSymbolCharNum, char _selectedListItemSymbolCharNum, char _noUserGrantSymbolCharNum /* = '#' */){
+void menwiz::begin(void *l,int c, int r) {
 
   ERROR(0);
   tm_start=millis();
   row=r;
   col=c;
-  fontNum = _fontNum;
-  nodeSymbolCharNum = _nodeSymbolCharNum;
-  currentNodeSymbolCharNum = _currentNodeSymbolCharNum;
-  listItemSymbolCharNum = _listItemSymbolCharNum;
-  selectedListItemSymbolCharNum = _selectedListItemSymbolCharNum;
-  noUserGrantSymbolCharNum = _noUserGrantSymbolCharNum;
 
   lcd=(MW_LCD*)l; 
-  //lcd->begin(c,r);  //  LCD size
+
   lcd->begin();
-//  lcd->displayStartScreen(false);
+
   delay(4000);
   lcd->clearScreen();
   lcd->setFont(fontNum);
-//  lcd->setBacklight(HIGH);
-//  lcd->noCursor();
+
   //TODO: determine if blink/noBlink has any needed function in menu system
 //  lcd->noBlink();
-/* TODO: need to come up with equivalent for GLCD
-  lcd->createChar(0,(uint8_t*)c0);
-  lcd->createChar(1,(uint8_t*)c1);
-  lcd->createChar(2,(uint8_t*)c2);
-*/
+
   sbuf=(char*)malloc(r*c+r+1); if(sbuf==NULL) ERROR(900);
   memset(sbuf,' ',r*c+r);sbuf[r*c+r]=0;
   buf =(char*)malloc(c+1);   if(buf==NULL) ERROR(900);  
@@ -498,11 +509,10 @@ void menwiz::drawMenu(_menu *mc){
       if(((_act*)mc->var)->type==MW_LIST){
       	top = currentNodeSymbolCharNum;}
       else if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false){
-        //top=2;}
     	  top=noUserGrantSymbolCharNum;}
       else
     	  top = currentNodeSymbolCharNum;
-      TSFORM(buf,mc->label,(int) col,top);
+      TSFORM(buf,mc->label,top);
       }
     else{
       FSFORM(buf,mc->label,(int) col);
@@ -577,26 +587,37 @@ void menwiz::drawMenu(_menu *mc){
 	      }
             memset(&sbuf[strlen(sbuf)],32,col-strlen(sbuf));
             sbuf[col]=0;
-//	    lcd->setCursor(0,i);
 	    lcd->print(sbuf);
             }
           else{ // NOT VARS (ROOT OR SUBMENU)
 	    op=(_option*)mc->o[j];
-//	    lcd->setCursor(0,i);
-//	    lcd->write((j==mc->cur_item)?'\xbb':(bitRead(m[op->sbm].flags,cur_user)?'-':2));
-	    lcd->print((j==mc->cur_item)?currentNodeSymbolCharNum:(bitRead(m[op->sbm].flags,cur_user)?nodeSymbolCharNum:noUserGrantSymbolCharNum));
+
+	    if (isCharSymbol) {
+			lcd->print((j==mc->cur_item)?currentNodeSymbolCharNum:(bitRead(m[op->sbm].flags,cur_user)?nodeSymbolCharNum:noUserGrantSymbolCharNum));
+	    } else {
+	    	lcd->drawBitmap(0, i*symbolBbxHeightPx, symbolBbxWidthPx, symbolBbxHeightPx, (j==mc->cur_item)?currentNodeSymbolBitmap:(bitRead(m[op->sbm].flags,cur_user)?nodeSymbolBitmap:noUserGrantSymbolBitmap));
+	    	lcd->setPrintPos(1,i);
+	    }
+
 	    FSFORM(buf,m[op->sbm].label,(int) col-1);
 	    }
 	  }
 	else{// NOT MENU COLLAPSED
 	  op=(_option*)mc->o[j];
-//	  lcd->setCursor(0,i);
           if(bitRead( m[((_option*)mc->o[mc->cur_item])->sbm].flags,cur_user)==false) {
-	    //lcd->write((j==mc->cur_item)?2:'-');
-        lcd->print((j==mc->cur_item)?noUserGrantSymbolCharNum:nodeSymbolCharNum);
+        	  if (isCharSymbol) {
+        		  lcd->print((j==mc->cur_item)?noUserGrantSymbolCharNum:nodeSymbolCharNum);
+        	  } else {
+				lcd->drawBitmap(0, i*symbolBbxHeightPx, symbolBbxWidthPx, symbolBbxHeightPx, (j==mc->cur_item)?noUserGrantSymbolBitmap:nodeSymbolBitmap);
+				lcd->setPrintPos(1,i);
+        	  }
           } else {
-            //lcd->write((j==mc->cur_item)?'\xbb':'-');
-        	lcd->print((j==mc->cur_item)?currentNodeSymbolCharNum:nodeSymbolCharNum);
+        	  if (isCharSymbol) {
+              	lcd->print((j==mc->cur_item)?currentNodeSymbolCharNum:nodeSymbolCharNum);
+        	  } else {
+        		  lcd->drawBitmap(0, i*symbolBbxHeightPx, symbolBbxWidthPx, symbolBbxHeightPx, (j==mc->cur_item)?currentNodeSymbolBitmap:nodeSymbolBitmap);
+        		  lcd->setPrintPos(1,i);
+        	  }
           }
 	  FSFORM(buf,m[op->sbm].label,(int) col-1);
           }
@@ -640,9 +661,13 @@ void menwiz::drawVar(_menu *mc){
           for (i=1,j=rstart;i<row;i++,j++){
             if(j<rstop){
               op=(_option*)mc->o[j];
-              lcd->setPrintPos(0,i);
-              //lcd->write((j==mc->cur_item)?0:'-');
-              lcd->print((j==mc->cur_item)?selectedListItemSymbolCharNum:listItemSymbolCharNum);
+              if (isCharSymbol) {
+				  lcd->setPrintPos(0,i);
+				  lcd->print((j==mc->cur_item)?selectedItemSymbolCharNum:itemSymbolCharNum);
+              } else {
+				  lcd->drawBitmap(0, i*symbolBbxHeightPx, symbolBbxWidthPx, symbolBbxHeightPx, (j==mc->cur_item)?selectedItemSymbolBitmap:itemSymbolBitmap);
+				  lcd->setPrintPos(1,i);
+              }
               FSFORM(buf,op->label,col-1);
               }
             else{
@@ -739,8 +764,12 @@ void menwiz::drawList(_menu *mc, int nc){
       int pc=i/nr; int pr=i%nr+1;
       lcd->setPrintPos(pc*cw,pr);
       if(i<mc->idx_o){
-		//lcd->write((i==mc->cur_item)?0:'-');
-    	  lcd->print((i==mc->cur_item)?selectedListItemSymbolCharNum:listItemSymbolCharNum);
+    	  if (isCharSymbol) {
+    		  lcd->print((i==mc->cur_item)?selectedItemSymbolCharNum:itemSymbolCharNum);
+    	  } else {
+			lcd->drawBitmap(pc*cw, i*symbolBbxHeightPx, symbolBbxWidthPx, symbolBbxHeightPx, (i==mc->cur_item)?selectedItemSymbolBitmap:itemSymbolBitmap);
+			lcd->setPrintPos(pc*cw+1, pr);
+    	  }
 		FSFORM(buf,((_option*)mc->o[i])->label,(int)cw-1);
 		}
       else{

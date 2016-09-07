@@ -2,7 +2,6 @@
 #include "MENWIZ_1_3_2_js_Digole.h"
 
 
-menwiz menu;
 DigoleSerialDisp lcd(&Wire,'\x27');
 int  list,sp=110;
 
@@ -20,6 +19,86 @@ static Button button1 = Button(button1Pin, BUTTON_PULLUP_INTERNAL, debounceMilli
 static Button button2 = Button(button2Pin, BUTTON_PULLUP_INTERNAL, debounceMillis);
 static Button button3 = Button(button3Pin, BUTTON_PULLUP_INTERNAL, debounceMillis);
 static Button button4 = Button(button4Pin, BUTTON_PULLUP_INTERNAL, debounceMillis);
+
+//modify images to match these 11px heights and vertical spacing, so they'll clear out their full space when drawn
+//reduce these to 6 wide (not really needed, as setting w/h in drawBitmap, and have nothing in last 2 spots of last nibble anyway - reduced width graphic will result in same bytes...)
+//apply styled arrow to n/m indicator in top line
+// parameterize (constructor?) whether to use text-based or bitmap-based symbols, and take appropriate steps in code
+// pass symbol w/h for bitmaps, and use w,h for drawBitmap calls, as well as i*h for vertical placement of symbols (again, conditionally, based on whether text or bitmap symbols)
+const unsigned char nodeBitmap[] PROGMEM = {
+	0x00
+	,0x00
+	,0x00
+	,0x00
+	,0x30
+	,0x30
+	,0x00
+	,0x00
+	,0x00
+	,0x00
+	,0x00
+};
+
+const unsigned char currentNodeBitmap[] PROGMEM = {
+	0x00
+	,0x00
+	,0x00
+	,0x20
+	,0x10
+	,0xf8
+	,0x10
+	,0x20
+	,0x00
+	,0x00
+	,0x00
+};
+
+const unsigned char noUserGrantBitmap[] PROGMEM = {
+	0x00
+	,0x00
+	,0x28
+	,0x7c
+	,0x38
+	,0x7c
+	,0x28
+	,0x00
+	,0x00
+	,0x00
+	,0x00
+};
+
+const unsigned char itemBitmap[] PROGMEM = {
+	0x00
+	,0x00
+	,0x30
+	,0x48
+	,0x84
+	,0x84
+	,0x48
+	,0x30
+	,0x00
+	,0x00
+	,0x00
+};
+
+const unsigned char selectedItemBitmap[] PROGMEM = {
+	0x00
+	,0x00
+	,0x30
+	,0x48
+	,0xb4
+	,0xb4
+	,0x48
+	,0x30
+	,0x00
+	,0x00
+	,0x00
+};
+
+//menwiz menu(200, '\xb7', '\xbb', '\xb0', '\x95', '#');
+menwiz menu(200, 6, 11, nodeBitmap, currentNodeBitmap, itemBitmap, selectedItemBitmap, noUserGrantBitmap);
+//symbolWidthPx(symbolWidthPx), symbolHeightPx(symbolHeightPx), nodeBitmap(nodeBitmap), currentNodeBitmap(currentNodeBitmap), noUserGrantBitmap(noUserGrantBitmap), itemBitmap(itemBitmap), selectedItemBitmap(selectedItemBitmap) {
+
 
 void onButtonRelease(Button& b) {
 	Serial.print("button pin hit: ");
@@ -48,11 +127,12 @@ int menuButtonMapper() {
 
 void setup() {
 
-	_menu *r,*s1,*s2;
+	_menu *r,*s1,*s2, *s5, *s6, *s7;
+//	menu(200, '\xb7', '\xbb', '\xb0', '\x95');
 
 	Serial.begin(19200);
-//	menu.begin(&lcd, 21, 6); //declare lcd object and screen size to menwiz lib
-	menu.begin(&lcd, 21, 6, 200, '\xb7', '\xbb', '\xb0', '\x95');
+	menu.begin(&lcd, 21, 6); //declare lcd object and screen size to menwiz lib
+//	menu.begin(&lcd, 21, 6, 200, '\xb7', '\xbb', '\xb0', '\x95');
 
 	menu.addUsrNav(menuButtonMapper, 4);
 
@@ -76,6 +156,9 @@ void setup() {
 	s1=menu.addMenu(MW_VAR,r, F("Node2"));
 	s1->addVar(MW_ACTION,myfunc);
 
+	s5 = menu.addMenu(MW_SUBMENU, r, F("Node 5"));
+	s6 = menu.addMenu(MW_SUBMENU, r, F("Node 6"));
+	s7 = menu.addMenu(MW_SUBMENU, r, F("Node 7"));
 
 	delay(500);
 
