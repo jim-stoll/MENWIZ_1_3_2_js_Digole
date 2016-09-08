@@ -213,10 +213,10 @@ protected:
 
 class menwiz{
 public:
-           menwiz(uint8_t fontNum, char nodeSymbolCharNum, char currentNodeSymbolCharNum, char itemSymbolCharNum, char selectedItemSymbolCharNum, char noUserGrantSymbolCharNum);
-           menwiz(uint8_t fontNum, unsigned int symbolBbxWidthPx, unsigned int symbolBbxHeightPx, const unsigned char nodeSymbolBitmap[], const unsigned char currentNodeSymbolBitmap[], const unsigned char itemSymbolBitmap[], const unsigned char selectedItemSymbolBitmap[], const unsigned char noUserGrantSymbolBitmap[]);
+           menwiz(void *lcd, int lcdWidthPx, int lcdHeightPx, uint8_t fontNum, unsigned int bbxWidthPx, unsigned int bbxHeightPx, char nodeSymbolCharNum, char currentNodeSymbolCharNum, char itemSymbolCharNum, char selectedItemSymbolCharNum, char noUserGrantSymbolCharNum);
+           menwiz(void *lcd, int lcdWidthPx, int lcdHeightPx, uint8_t fontNum, unsigned int bbxWidthPx, unsigned int bbxHeightPx, const unsigned char nodeSymbolBitmap[], const unsigned char currentNodeSymbolBitmap[], const unsigned char itemSymbolBitmap[], const unsigned char selectedItemSymbolBitmap[], const unsigned char noUserGrantSymbolBitmap[]);
 
-  void     begin(void *l,int c, int r);//, uint8_t _fontNum, char _nodeSymbolCharNum, char _currentNodeSymbolCharNum, char _listItemSymbolCharNum, char _selectedListItemSymbolCharNum, char _noUserGrantSymbolCharNum = '#');
+  void     begin();
   void     addSplash(char *,int);
   void     addUsrScreen(void (*f)(), unsigned long);
   void     addUsrNav(int (*f)(), int);
@@ -277,8 +277,11 @@ private:
   const unsigned char *selectedItemSymbolBitmap;
   const unsigned char *noUserGrantSymbolBitmap;
 
-  byte symbolBbxWidthPx;
-  byte symbolBbxHeightPx;
+  byte bbxWidthPx;
+  byte bbxHeightPx;
+
+  int lcdWidthPx;
+  int lcdHeightPx;
 
   void     apply2vars(void (*f)(_menu *));
   int      actNavButtons(int);

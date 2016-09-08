@@ -95,10 +95,8 @@ const unsigned char selectedItemBitmap[] PROGMEM = {
 	,0x00
 };
 
-//menwiz menu(200, '\xb7', '\xbb', '\xb0', '\x95', '#');
-menwiz menu(200, 6, 11, nodeBitmap, currentNodeBitmap, itemBitmap, selectedItemBitmap, noUserGrantBitmap);
-//symbolWidthPx(symbolWidthPx), symbolHeightPx(symbolHeightPx), nodeBitmap(nodeBitmap), currentNodeBitmap(currentNodeBitmap), noUserGrantBitmap(noUserGrantBitmap), itemBitmap(itemBitmap), selectedItemBitmap(selectedItemBitmap) {
-
+//menwiz menu(&lcd, 128, 64, 200, 6, 11, '\xb7', '\xbb', '\xb0', '\x95', '#');
+menwiz menu(&lcd, 128, 64, 200, 6, 11, nodeBitmap, currentNodeBitmap, itemBitmap, selectedItemBitmap, noUserGrantBitmap);
 
 void onButtonRelease(Button& b) {
 	Serial.print("button pin hit: ");
@@ -128,14 +126,11 @@ int menuButtonMapper() {
 void setup() {
 
 	_menu *r,*s1,*s2, *s5, *s6, *s7;
-//	menu(200, '\xb7', '\xbb', '\xb0', '\x95');
 
 	Serial.begin(19200);
-	menu.begin(&lcd, 21, 6); //declare lcd object and screen size to menwiz lib
-//	menu.begin(&lcd, 21, 6, 200, '\xb7', '\xbb', '\xb0', '\x95');
+	menu.begin();
 
 	menu.addUsrNav(menuButtonMapper, 4);
-
 
 	r=menu.addMenu(MW_ROOT,NULL,F("123456789012345678901"));//JKLMNOWXZ"));
 	s1=menu.addMenu(MW_SUBMENU,r, F("Node1"));
