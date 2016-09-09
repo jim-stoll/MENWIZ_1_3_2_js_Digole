@@ -125,7 +125,7 @@ int menuButtonMapper() {
 
 void setup() {
 
-	_menu *r,*s1,*s2, *s5, *s6, *s7;
+	_menu *r,*s1,*s1_1, *s1_2, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10, *s11, *s12;
 
 	Serial.begin(19200);
 	menu.begin();
@@ -133,27 +133,41 @@ void setup() {
 	menu.addUsrNav(menuButtonMapper, 4);
 
 	r=menu.addMenu(MW_ROOT,NULL,F("123456789012345678901"));//JKLMNOWXZ"));
-	s1=menu.addMenu(MW_SUBMENU,r, F("Node1"));
-	s2=menu.addMenu(MW_VAR,s1, F("Node3"));
-	s2->addVar(MW_LIST,&list);
-	s2->addItem(MW_LIST, F("Option1"));
-	s2->addItem(MW_LIST, F("Option2"));
-	s2->addItem(MW_LIST, F("Option3"));
-	s2->addItem(MW_LIST, F("Option4"));
-	s2->addItem(MW_LIST, F("Option5"));
-	s2->addItem(MW_LIST, F("Option6"));
+	s1=menu.addMenu(MW_SUBMENU,r, F("Node 1"));
+	s1_1=menu.addMenu(MW_VAR,s1, F("Node 1-1 Long Name..."));
+	s1_1->addVar(MW_LIST,&list);
+	s1_1->addItem(MW_LIST, F("Opt1"));
+	s1_1->addItem(MW_LIST, F("Opt2"));
+	s1_1->addItem(MW_LIST, F("Opt3"));
+	s1_1->addItem(MW_LIST, F("Opt4"));
+	s1_1->addItem(MW_LIST, F("Opt5"));
+	s1_1->addItem(MW_LIST, F("Opt6"));
+	s1_1->addItem(MW_LIST, F("Opt7"));
+	s1_1->addItem(MW_LIST, F("Opt8"));
+	s1_1->addItem(MW_LIST, F("Opt9"));
+	s1_1->addItem(MW_LIST, F("Opt10"));
+	s1_1->addItem(MW_LIST, F("Opt11"));
+	s1_1->addItem(MW_LIST, F("Opt12"));
+//	s2->addItem(MW_LIST, F("Opt13"));
 //	          s2->setBehaviour(MW_SCROLL_HORIZONTAL,true);
 //	          s2->setBehaviour(MW_LIST_2COLUMNS,true);
 //	          s2->setBehaviour(MW_LIST_3COLUMNS,true);
 
-	s2=menu.addMenu(MW_VAR,s1, F("Node4"));
-	s2->addVar(MW_AUTO_INT,&sp,0,120,10);
-	s1=menu.addMenu(MW_VAR,r, F("Node2"));
+	s1_2=menu.addMenu(MW_VAR,s1, F("Node 1-2"));
+	s1_2->addVar(MW_AUTO_INT,&sp,0,120,10);
+	s1=menu.addMenu(MW_VAR,r, F("Node 2"));
 	s1->addVar(MW_ACTION,myfunc);
 
-	s5 = menu.addMenu(MW_SUBMENU, r, F("Node 5"));
-	s6 = menu.addMenu(MW_SUBMENU, r, F("Node 6"));
-	s7 = menu.addMenu(MW_SUBMENU, r, F("Node 7"));
+	s5 = menu.addMenu(MW_SUBMENU, r, F("Node 3"));
+	s6 = menu.addMenu(MW_SUBMENU, r, F("Node 4"));
+	s7 = menu.addMenu(MW_SUBMENU, r, F("Node 5"));
+	s8 = menu.addMenu(MW_SUBMENU, r, F("Node 6"));
+	s9 = menu.addMenu(MW_SUBMENU, r, F("Node 7"));
+	s10 = menu.addMenu(MW_SUBMENU, r, F("Node 8"));
+	s9 = menu.addMenu(MW_SUBMENU, r, F("Node 9"));
+	s10 = menu.addMenu(MW_SUBMENU, r, F("Node 10"));
+	s11 = menu.addMenu(MW_SUBMENU, r, F("Node 11"));
+	s12 = menu.addMenu(MW_SUBMENU, r, F("Node 12"));
 
 	delay(500);
 

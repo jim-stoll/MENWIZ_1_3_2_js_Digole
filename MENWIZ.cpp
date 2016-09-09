@@ -45,7 +45,8 @@
 void menwiz::TSFORM(char *b, const __FlashStringHelper *s, byte c) {
 	char tmp[6];
 	memset(b,32,col);
-	strncpy_P(b,(const char PROGMEM*)s, min(col-5,strlen_P((char PROGMEM*) s)));
+	//need to shorten top line by an extra 2 characters, if the current menu has >10 items, as 2 extra digits will be needed for 'nn/mm' vs 'n/m'
+	strncpy_P(b,(const char PROGMEM*)s, min((col - (5 + 2*(cur_menu->idx_o >= 10))),strlen_P((char PROGMEM*) s)));
 	itoa(cur_menu->cur_item+1,tmp,10);
 	strcat(tmp,"/");
 	itoa(cur_menu->idx_o,tmp+strlen(tmp),10);
@@ -58,7 +59,8 @@ void menwiz::TSFORM(char *b, const __FlashStringHelper *s, byte c) {
 	lcd->print(b);
 
 	if (!isCharSymbol) {
-		lcd->drawBitmap(col*bbxWidthPx - 4*bbxWidthPx, 0, bbxWidthPx, bbxHeightPx, currentNodeSymbolBitmap);
+		//if current menu item is >= 10th item, then move bitmap another position to the left, to allow for the 2nd digit in the 'nn' of 'nn/mm'
+		lcd->drawBitmap(col*bbxWidthPx - (5 + (cur_menu->cur_item+1 >= 10))*bbxWidthPx, 0, bbxWidthPx, bbxHeightPx, currentNodeSymbolBitmap);
 	}
 }
 
@@ -765,7 +767,7 @@ void menwiz::drawList(_menu *mc, int nc){
     	  if (isCharSymbol) {
     		  lcd->print((i==mc->cur_item)?selectedItemSymbolCharNum:itemSymbolCharNum);
     	  } else {
-			lcd->drawBitmap(pc*cw, i*bbxHeightPx, bbxWidthPx, bbxHeightPx, (i==mc->cur_item)?selectedItemSymbolBitmap:itemSymbolBitmap);
+			lcd->drawBitmap(pc*cw*bbxWidthPx, pr*bbxHeightPx, bbxWidthPx, bbxHeightPx, (i==mc->cur_item)?selectedItemSymbolBitmap:itemSymbolBitmap);
 			lcd->setPrintPos(pc*cw+1, pr);
     	  }
 		FSFORM(buf,((_option*)mc->o[i])->label,(int)cw-1);
