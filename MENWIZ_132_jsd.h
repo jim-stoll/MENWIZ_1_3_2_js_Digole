@@ -172,6 +172,28 @@ typedef struct{
   void     (*action)();
 }_act;
 
+typedef struct {
+	bool	isChar;
+	char	nodeSymbolCharNum;
+	char	currentNodeSymbolCharNum;
+	char	itemSymbolCharNum;
+	char	selectedItemSymbolCharNum;
+	char	noUserGrantSymbolCharNum;
+	const unsigned char *nodeSymbolBitmap;
+	const unsigned char *currentNodeSymbolBitmap;
+	const unsigned char *itemSymbolBitmap;
+	const unsigned char *selectedItemSymbolBitmap;
+	const unsigned char *noUserGrantSymbolBitmap;
+
+
+} _symbol;
+
+typedef struct {
+	uint8_t	fontNum;
+	byte bbxWidthPx;
+	byte bbxHeightPx;
+} _font;
+
 class _option{
 public:
            _option();
@@ -264,24 +286,11 @@ private:
   unsigned long tm_splash;      	//splash screen duration  
   unsigned long tm_usrScreen;   	//lap time before usrscreen  
 
-  bool	isCharSymbol;
-  uint8_t	fontNum;
-  char	nodeSymbolCharNum;
-  char	currentNodeSymbolCharNum;
-  char	itemSymbolCharNum;
-  char	selectedItemSymbolCharNum;
-  char	noUserGrantSymbolCharNum;
-  const unsigned char *nodeSymbolBitmap;
-  const unsigned char *currentNodeSymbolBitmap;
-  const unsigned char *itemSymbolBitmap;
-  const unsigned char *selectedItemSymbolBitmap;
-  const unsigned char *noUserGrantSymbolBitmap;
-
-  byte bbxWidthPx;
-  byte bbxHeightPx;
-
   int lcdWidthPx;
   int lcdHeightPx;
+
+  _font font;
+  _symbol symbol;
 
   void     apply2vars(void (*f)(_menu *));
   int      actNavButtons(int);
