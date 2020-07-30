@@ -1,3 +1,26 @@
+MENWIZ_1_3_2_js_Digole
+
+A modified version of brunialti's amazing MENWIZ menu library for Arduino.
+
+This version is customized to use the Digole Serial Display/Adapter, and provides
+the following added functionality:
+- use of custom bitmaps for menu symbol indicators (vs the charset-based default symbols)
+- a new 'boolean action' menu option, which provides an on/off toggle functionality that
+  calls a callback method immediately upon comfirmation of the boolean variable change
+- a new 'labeled action' menu option, which calls a callback method immediately upon
+  confirmation of the choice selection
+- a 'display only' menu option that can display text from a callback method (such
+  as a dynamic status, memory usage, etc)
+- a 'cleanup' method that frees dynamically allocated memory used by the menu, such as
+  might be desired when closing the menu and resuming normal progam operation)
+  
+Despite being customized for use with the Digole Serial Display, this code should work
+with little or no modification with the original LCD library (replacing the reference to
+the Digole library with a reference to the LCD library), though I have not tested this.
+
+
+Original README:
+
 MENWIZ: YET ANOTHER CHARACTER LCD MENU GENERATOR LIBRARY
 
 
@@ -32,7 +55,7 @@ Latest version: V 1.3.2 (April 29 2014):
 - It is now possible to set up to 3 users and to set access grant to submenus for each one of   them with the following methods:
   menwiz::setCurrentUser(int);
   _menu:: setBehaviour(MW_GRANT_USERx, Boolean);
-- New data type added: the long awaited editable text MW_EDIT_TEXT. It works for now *only*   in ì6 buttons modeî. The variable is not buffered, that is any change will take immediate   effect: when you leave the variable editing with exit button, the changes will affect the   original char variable.
+- New data type added: the long awaited editable text MW_EDIT_TEXT. It works for now *only*   in ‚Äú6 buttons mode‚Äù. The variable is not buffered, that is any change will take immediate   effect: when you leave the variable editing with exit button, the changes will affect the   original char variable.
 - The method getLastbutton of the class menwiz let available the last pushed button code
 
 KNOWN LIMITATIONS AND BUGS
